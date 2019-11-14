@@ -1,0 +1,53 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",    
+    "parameters": {  },
+    "variables": { 
+        "appServicePlanName":"madsdPlan",
+        "appServicePlanSize": "PC2",
+        "appServicePlanInstanceCount": 1,
+        "location": "[resourceGroup().location]",
+        "webAppName": "madsdwebappwindowsdocker"
+    },
+    "functions": [  ],
+    "resources": [ 
+        {
+            "name": "[variables('appServicePlanName')]",
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2018-02-01",            
+            "location": "[variables('location')]",
+            "tags": {},
+            "properties": {              
+                 "reserved": "false"
+            },            
+            "sku": {
+                "name": "[variables('appServicePlanSize')]",
+                "capacity": "[variables('appServicePlanInstanceCount')]"
+            }
+        },
+        {
+            "name": "[variables('webAppName')]",
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2018-11-01",            
+            "location": "[variables('location')]",
+            "tags": {},
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+            ],
+            "properties": {              
+              "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+              "reserved": "false",              
+              "siteConfig": {
+                  "http20Enabled": "true",
+                  "minTlsVersion": "1.2",
+                  "windowsFxVersion": "DOCKER|mcr.microsoft.com/azure-app-service/samples/aspnethelloworld:latest"
+              },            
+              "httpsOnly": "true"   
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            }
+        }
+     ],
+    "outputs": {  }
+}

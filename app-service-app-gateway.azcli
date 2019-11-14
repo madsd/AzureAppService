@@ -1,0 +1,9 @@
+RESOURCE_GROUP_NAME=madsd-appgw-appsvc
+echo $RESOURCE_GROUP_NAME
+az group create --name $RESOURCE_GROUP_NAME --location westeurope
+
+# vNet
+az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.vnet.json --mode Incremental
+
+# Windows App
+az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.windows.simple.json --mode Incremental

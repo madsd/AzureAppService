@@ -1,0 +1,1165 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "sites_test_name": {
+            "defaultValue": "test",
+            "type": "String"
+        },
+        "serverfarms_plan1_name": {
+            "defaultValue": "plan1",
+            "type": "String"
+        },
+        "serverfarms_plan2_name": {
+            "defaultValue": "plan2",
+            "type": "String"
+        },
+        "hostingEnvironments_madsd_name": {
+            "defaultValue": "madsd",
+            "type": "String"
+        },
+        "routeTables_madsd_Route_Table_name": {
+            "defaultValue": "madsd-Route-Table",
+            "type": "String"
+        },
+        "networkSecurityGroups_madsd_NSG_name": {
+            "defaultValue": "madsd-NSG",
+            "type": "String"
+        },
+        "virtualNetworks_weu_web_vnet_externalid": {
+            "defaultValue": "/subscriptions/a6f7834d-3304-4890-82af-ec04cb382539/resourceGroups/webapp-global/providers/Microsoft.Network/virtualNetworks/weu-web-vnet",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2019-06-01",
+            "name": "[parameters('networkSecurityGroups_madsd_NSG_name')]",
+            "location": "westeurope",
+            "tags": {
+                "displayName": "NSG - Subnet"
+            },
+            "properties": {
+                "provisioningState": "Succeeded",
+                "resourceGuid": "7b7cc997-37b2-49f9-8dde-a988d45783ed",
+                "securityRules": [
+                    {
+                        "name": "Inbound-management",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Used to manage ASE from public VIP",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "454-455",
+                            "sourceAddressPrefix": "AppServiceManagement",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Inbound-load-balancer-keep-alive",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Allow communication to ASE from Load Balancer",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "16001",
+                            "sourceAddressPrefix": "AzureLoadBalancer",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 105,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "ASE-internal-inbound",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "ASE-internal-inbound",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "10.100.1.0/24",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 110,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Inbound-HTTP",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Allow HTTP",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "80",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 120,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Inbound-HTTPS",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Allow HTTPS",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "443",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 130,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Inbound-FTP",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Allow FTP over port 21",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "21",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 140,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Inbound-FTPS",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Allow FTPS",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "990",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 150,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Inbound-FTP-Data",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "RDP",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "10001-10020",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 160,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Inbound-Remote-Debugging",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Visual Studio remote debugging",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "4016-4022",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 170,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Outbound-443",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Azure Storage blob",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "443",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Outbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Outbound-DB",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Database",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "1433",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "Sql",
+                            "access": "Allow",
+                            "priority": 110,
+                            "direction": "Outbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Outbound-DNS",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "DNS",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "53",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 120,
+                            "direction": "Outbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "ASE-internal-outbound",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Azure Storage queue",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "10.100.1.0/24",
+                            "access": "Allow",
+                            "priority": 130,
+                            "direction": "Outbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Outbound-80",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Outbound 80",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "80",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 140,
+                            "direction": "Outbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "ASE-to-VNET",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "ASE to VNET",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "10.100.0.0/20",
+                            "access": "Allow",
+                            "priority": 150,
+                            "direction": "Outbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Outbound-NTP",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Clock",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "123",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 160,
+                            "direction": "Outbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    }
+                ],
+                "defaultSecurityRules": [
+                    {
+                        "name": "AllowVnetInBound",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Allow inbound traffic from all VMs in VNET",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "destinationAddressPrefix": "VirtualNetwork",
+                            "access": "Allow",
+                            "priority": 65000,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "AllowAzureLoadBalancerInBound",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Allow inbound traffic from azure load balancer",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "AzureLoadBalancer",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 65001,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "DenyAllInBound",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Deny all inbound traffic",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Deny",
+                            "priority": 65500,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "AllowVnetOutBound",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Allow outbound traffic from all VMs to all VMs in VNET",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "destinationAddressPrefix": "VirtualNetwork",
+                            "access": "Allow",
+                            "priority": 65000,
+                            "direction": "Outbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "AllowInternetOutBound",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Allow outbound traffic from all VMs to Internet",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "Internet",
+                            "access": "Allow",
+                            "priority": 65001,
+                            "direction": "Outbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "DenyAllOutBound",
+                        "etag": "W/\"9d028722-c6e3-4cdd-92c9-b01f33a00eca\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "description": "Deny all outbound traffic",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Deny",
+                            "priority": 65500,
+                            "direction": "Outbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/routeTables",
+            "apiVersion": "2019-06-01",
+            "name": "[parameters('routeTables_madsd_Route_Table_name')]",
+            "location": "westeurope",
+            "tags": {
+                "displayName": "UDR - Subnet"
+            },
+            "properties": {
+                "provisioningState": "Succeeded",
+                "disableBgpRoutePropagation": false,
+                "routes": [
+                    {
+                        "name": "madsd-route",
+                        "etag": "W/\"9341eae5-25bc-4c95-aa17-dafc3cb4d415\"",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "addressPrefix": "0.0.0.0/0",
+                            "nextHopType": "Internet"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Web/hostingEnvironments",
+            "apiVersion": "2016-09-01",
+            "name": "[parameters('hostingEnvironments_madsd_name')]",
+            "location": "West Europe",
+            "kind": "ASEV2",
+            "zones": [
+                null
+            ],
+            "properties": {
+                "name": "[parameters('hostingEnvironments_madsd_name')]",
+                "location": "West Europe",
+                "vnetName": "weu-web-vnet",
+                "vnetResourceGroupName": "webapp-global",
+                "vnetSubnetName": "ase-subnet",
+                "virtualNetwork": {
+                    "id": "[parameters('virtualNetworks_weu_web_vnet_externalid')]",
+                    "subnet": "ase-subnet"
+                },
+                "internalLoadBalancingMode": "Web, Publishing",
+                "multiSize": "Standard_D1_V2",
+                "multiRoleCount": 2,
+                "ipsslAddressCount": 0,
+                "dnsSuffix": "[concat(parameters('hostingEnvironments_madsd_name'), '.appserviceenvironment.net')]",
+                "networkAccessControlList": [],
+                "frontEndScaleFactor": 15,
+                "suspended": false
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/ASE-internal-inbound')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "ASE-internal-inbound",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "*",
+                "sourceAddressPrefix": "10.100.1.0/24",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 110,
+                "direction": "Inbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/ASE-internal-outbound')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "Azure Storage queue",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "*",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "10.100.1.0/24",
+                "access": "Allow",
+                "priority": 130,
+                "direction": "Outbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/ASE-to-VNET')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "ASE to VNET",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "*",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "10.100.0.0/20",
+                "access": "Allow",
+                "priority": 150,
+                "direction": "Outbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/Inbound-FTP')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "Allow FTP over port 21",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "21",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 140,
+                "direction": "Inbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/Inbound-FTP-Data')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "RDP",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "10001-10020",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 160,
+                "direction": "Inbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/Inbound-FTPS')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "Allow FTPS",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "990",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 150,
+                "direction": "Inbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/Inbound-HTTP')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "Allow HTTP",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "80",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 120,
+                "direction": "Inbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/Inbound-HTTPS')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "Allow HTTPS",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "443",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 130,
+                "direction": "Inbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/Inbound-load-balancer-keep-alive')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "Allow communication to ASE from Load Balancer",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "16001",
+                "sourceAddressPrefix": "AzureLoadBalancer",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 105,
+                "direction": "Inbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/Inbound-management')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "Used to manage ASE from public VIP",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "454-455",
+                "sourceAddressPrefix": "AppServiceManagement",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 100,
+                "direction": "Inbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/Inbound-Remote-Debugging')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "Visual Studio remote debugging",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "4016-4022",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 170,
+                "direction": "Inbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/Outbound-443')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "Azure Storage blob",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "443",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 100,
+                "direction": "Outbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/Outbound-80')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "Outbound 80",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "80",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 140,
+                "direction": "Outbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/Outbound-DB')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "Database",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "1433",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "Sql",
+                "access": "Allow",
+                "priority": 110,
+                "direction": "Outbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/Outbound-DNS')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "DNS",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "53",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 120,
+                "direction": "Outbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('networkSecurityGroups_madsd_NSG_name'), '/Outbound-NTP')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_madsd_NSG_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "description": "Clock",
+                "protocol": "*",
+                "sourcePortRange": "*",
+                "destinationPortRange": "123",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 160,
+                "direction": "Outbound",
+                "sourcePortRanges": [],
+                "destinationPortRanges": [],
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/routeTables/routes",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('routeTables_madsd_Route_Table_name'), '/madsd-route')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/routeTables', parameters('routeTables_madsd_Route_Table_name'))]"
+            ],
+            "properties": {
+                "provisioningState": "Succeeded",
+                "addressPrefix": "0.0.0.0/0",
+                "nextHopType": "Internet"
+            }
+        },
+        {
+            "type": "Microsoft.Web/hostingEnvironments/multiRolePools",
+            "apiVersion": "2016-09-01",
+            "name": "[concat(parameters('hostingEnvironments_madsd_name'), '/default')]",
+            "location": "West Europe",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/hostingEnvironments', parameters('hostingEnvironments_madsd_name'))]"
+            ],
+            "sku": {
+                "name": "Q1",
+                "tier": "Quantum",
+                "size": "Q1",
+                "family": "Q",
+                "capacity": 2
+            },
+            "properties": {
+                "workerSize": "Standard_D1_V2",
+                "workerCount": 2,
+                "instanceNames": [
+                    "10.100.1.9",
+                    "10.100.1.8"
+                ],
+                "mdmId": "waws-prod-am2-c92dc5e5_MultiRole"
+            }
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2016-09-01",
+            "name": "[parameters('serverfarms_plan1_name')]",
+            "location": "West Europe",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/hostingEnvironments', parameters('hostingEnvironments_madsd_name'))]"
+            ],
+            "sku": {
+                "name": "I1",
+                "tier": "Isolated",
+                "size": "I1",
+                "family": "I",
+                "capacity": 1
+            },
+            "kind": "linux",
+            "properties": {
+                "name": "[parameters('serverfarms_plan1_name')]",
+                "hostingEnvironmentProfile": {
+                    "id": "[resourceId('Microsoft.Web/hostingEnvironments', parameters('hostingEnvironments_madsd_name'))]"
+                },
+                "perSiteScaling": false,
+                "reserved": true,
+                "targetWorkerCount": 0,
+                "targetWorkerSizeId": 0
+            }
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2016-09-01",
+            "name": "[parameters('serverfarms_plan2_name')]",
+            "location": "West Europe",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/hostingEnvironments', parameters('hostingEnvironments_madsd_name'))]"
+            ],
+            "sku": {
+                "name": "I1",
+                "tier": "Isolated",
+                "size": "I1",
+                "family": "I",
+                "capacity": 1
+            },
+            "kind": "app",
+            "properties": {
+                "name": "[parameters('serverfarms_plan2_name')]",
+                "hostingEnvironmentProfile": {
+                    "id": "[resourceId('Microsoft.Web/hostingEnvironments', parameters('hostingEnvironments_madsd_name'))]"
+                },
+                "perSiteScaling": false,
+                "reserved": false,
+                "targetWorkerCount": 0,
+                "targetWorkerSizeId": 0
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/config",
+            "apiVersion": "2016-08-01",
+            "name": "[concat(parameters('sites_test_name'), '/web')]",
+            "location": "West Europe",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_test_name'))]"
+            ],
+            "properties": {
+                "numberOfWorkers": 1,
+                "defaultDocuments": [
+                    "Default.htm",
+                    "Default.html",
+                    "Default.asp",
+                    "index.htm",
+                    "index.html",
+                    "iisstart.htm",
+                    "default.aspx",
+                    "index.php",
+                    "hostingstart.html"
+                ],
+                "netFrameworkVersion": "v4.0",
+                "phpVersion": "5.6",
+                "pythonVersion": "",
+                "nodeVersion": "",
+                "linuxFxVersion": "",
+                "requestTracingEnabled": false,
+                "remoteDebuggingEnabled": false,
+                "httpLoggingEnabled": false,
+                "logsDirectorySizeLimit": 35,
+                "detailedErrorLoggingEnabled": false,
+                "publishingUsername": "$test",
+                "scmType": "None",
+                "use32BitWorkerProcess": true,
+                "webSocketsEnabled": false,
+                "alwaysOn": true,
+                "appCommandLine": "",
+                "managedPipelineMode": "Integrated",
+                "virtualApplications": [
+                    {
+                        "virtualPath": "/",
+                        "physicalPath": "site\\wwwroot",
+                        "preloadEnabled": true,
+                        "virtualDirectories": null
+                    }
+                ],
+                "winAuthAdminState": 0,
+                "winAuthTenantState": 0,
+                "customAppPoolIdentityAdminState": false,
+                "customAppPoolIdentityTenantState": false,
+                "loadBalancing": "LeastRequests",
+                "routingRules": [],
+                "experiments": {
+                    "rampUpRules": []
+                },
+                "autoHealEnabled": false,
+                "vnetName": "",
+                "siteAuthEnabled": false,
+                "siteAuthSettings": {
+                    "enabled": null,
+                    "unauthenticatedClientAction": null,
+                    "tokenStoreEnabled": null,
+                    "allowedExternalRedirectUrls": null,
+                    "defaultProvider": null,
+                    "clientId": null,
+                    "clientSecret": null,
+                    "clientSecretCertificateThumbprint": null,
+                    "issuer": null,
+                    "allowedAudiences": null,
+                    "additionalLoginParams": null,
+                    "isAadAutoProvisioned": false,
+                    "googleClientId": null,
+                    "googleClientSecret": null,
+                    "googleOAuthScopes": null,
+                    "facebookAppId": null,
+                    "facebookAppSecret": null,
+                    "facebookOAuthScopes": null,
+                    "twitterConsumerKey": null,
+                    "twitterConsumerSecret": null,
+                    "microsoftAccountClientId": null,
+                    "microsoftAccountClientSecret": null,
+                    "microsoftAccountOAuthScopes": null
+                },
+                "localMySqlEnabled": false,
+                "http20Enabled": false,
+                "minTlsVersion": "1.2",
+                "ftpsState": "AllAllowed",
+                "reservedInstanceCount": 0,
+                "fileChangeAuditEnabled": false
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/hostNameBindings",
+            "apiVersion": "2016-08-01",
+            "name": "[concat(parameters('sites_test_name'), '/', parameters('sites_test_name'), '.madsd.appserviceenvironment.net')]",
+            "location": "West Europe",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_test_name'))]"
+            ],
+            "properties": {
+                "siteName": "test",
+                "hostNameType": "Verified"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2016-08-01",
+            "name": "[parameters('sites_test_name')]",
+            "location": "West Europe",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_plan2_name'))]",
+                "[resourceId('Microsoft.Web/hostingEnvironments', parameters('hostingEnvironments_madsd_name'))]"
+            ],
+            "kind": "app",
+            "properties": {
+                "enabled": true,
+                "hostNameSslStates": [
+                    {
+                        "name": "[concat(parameters('sites_test_name'), '.madsd.appserviceenvironment.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Standard"
+                    },
+                    {
+                        "name": "[concat(parameters('sites_test_name'), '.scm.madsd.appserviceenvironment.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Repository"
+                    }
+                ],
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_plan2_name'))]",
+                "reserved": false,
+                "scmSiteAlsoStopped": false,
+                "hostingEnvironmentProfile": {
+                    "id": "[resourceId('Microsoft.Web/hostingEnvironments', parameters('hostingEnvironments_madsd_name'))]"
+                },
+                "clientAffinityEnabled": true,
+                "clientCertEnabled": false,
+                "hostNamesDisabled": false,
+                "containerSize": 0,
+                "dailyMemoryTimeQuota": 0,
+                "httpsOnly": false
+            }
+        }
+    ]
+}

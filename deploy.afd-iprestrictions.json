@@ -1,0 +1,69 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",    
+    "parameters": {
+        "webAppName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the webApp - must be globally unique."
+            }
+        },
+        "webAppLocation": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "The location of the webApp"
+            }
+        },
+    },
+    "variables": {  
+        "webAppName": "[parameters('webAppName')]",
+        "webAppLocation": "[parameters('webAppLocation')]"
+    },
+    "resources": [
+        {
+            "apiVersion": "2018-11-01",
+            "name": "[variables('webAppName')]",
+            "type": "Microsoft.Web/Sites",
+            "location": "[variables('webAppLocation')]",
+            "properties":{
+                "siteConfig":{
+                    "ipSecurityRestrictions": [
+                        {
+                        "ipAddress": "147.243.0.0/16",
+                        "action": "Allow",
+                        "tag": "Default",
+                        "priority": 200,
+                        "name": "afd-ipv4",
+                        "description": "Azure Front Door IPv4 addresses"
+                        },
+                        {
+                        "ipAddress": "2a01:111:2050::/44",
+                        "action": "Allow",
+                        "tag": "Default",
+                        "priority": 210,
+                        "name": "afd-ipv6",
+                        "description": "Azure Front Door IPv6 addresses"
+                        },
+                        {
+                        "ipAddress": "168.63.129.16/32",
+                        "action": "Allow",
+                        "tag": "Default",
+                        "priority": 220,
+                        "name": "afd-mgmt",
+                        "description": "Azure Basic Infrastructure IP"
+                        },
+                        {
+                        "ipAddress": "169.254.169.254/32",
+                        "action": "Allow",
+                        "tag": "Default",
+                        "priority": 230,
+                        "name": "afd-meta",
+                        "description": "Azure Metadata Endpoint IP"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

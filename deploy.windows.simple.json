@@ -1,0 +1,57 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",    
+    "parameters": { 
+        "webAppName": {
+            "defaultValue": "madsd-win",
+            "type": "string"
+        }
+     },
+    "variables": { 
+        "appServicePlanName":"madsd-win-asp",
+        "appServicePlanSize": "S1",
+        "appServicePlanInstanceCount": 1,
+        "location": "[resourceGroup().location]",
+        "webAppName": "[parameters('webAppName')]"
+    },
+    "functions": [  ],
+    "resources": [ 
+        {
+            "name": "[variables('appServicePlanName')]",
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2018-02-01",            
+            "location": "[variables('location')]",
+            "tags": {},
+            "properties": {              
+                 "reserved": "false"
+            },
+            "sku": {
+                "name": "[variables('appServicePlanSize')]",
+                "capacity": "[variables('appServicePlanInstanceCount')]"
+            }
+        },
+        {
+            "name": "[variables('webAppName')]",
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2018-11-01",            
+            "location": "[variables('location')]",
+            "tags": {},
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+            ],
+            "properties": {              
+              "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+              "reserved": "false",              
+              "siteConfig": {
+                  "http20Enabled": "true",
+                  "minTlsVersion": "1.2"
+              },            
+              "httpsOnly": "false"   
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            }
+        }
+     ],
+    "outputs": {  }
+}

@@ -1,0 +1,30 @@
+#!/usr/bin/env sh
+az account show
+# Create a custom RBAC role that grants permissions to modifiy only TXT records
+dnscustomrole='{ 
+    "Name": "DNS TXT Record Contributor", 
+    "Id": "",
+     "IsCustom": true, 
+    "Description": "Can manage DNS TXT records only.", 
+    "Actions": [ 
+        "Microsoft.Network/dnsZones/TXT/*", 
+        "Microsoft.Network/dnsZones/read", 
+        "Microsoft.Authorization/*/read", 
+        "Microsoft.Insights/alertRules/*", 
+        "Microsoft.ResourceHealth/availabilityStatuses/read", 
+        "Microsoft.Resources/deployments/read", 
+        "Microsoft.Resources/subscriptions/resourceGroups/read" 
+    ],
+    "NotActions": [ 
+    ],
+    "AssignableScopes": [ 
+        "/subscriptions/a6f7834d-3304-4890-82af-ec04cb382539",
+        "/subscriptions/0a56b3b5-ba17-4825-9876-3706ec8fdab7" 
+    ] 
+}'
+az role definition create --role-definition "$dnscustomrole"
+# Create a new service principal and grant permissions to modify TXT recornds in the give DNS Zone
+az ad sp create-for-rbac --name  "AcmeDnsValidator" --role "DNS TXT Record Contributor" --scopes "/subscriptions/12345678-9abc-def0-1234-567890abcdef/resourceGroups/exampledns_rg/providers/Microsoft.Network/dnszones/example.com 
+
+# or  grant an existing service principal permissions to modify TXT recornds in the give DNS Zone
+#az role assignment create  --assignee 3b5033b5-7a66-43a5-b3b9-a36b9e7c25ed --scope "/subscriptions/12345678-9abc-def0-1234-567890abcdef/resourceGroups/exampledns_rg/providers/Microsoft.Network/dnszones/example.com" --role "DNS TXT Contributor"

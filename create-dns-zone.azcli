@@ -1,0 +1,51 @@
+DOMAIN_NAME=api-mgmt.reddoglabs.com
+KEYVAULT_NAME=apim-certs
+KEYVAULT_SECRET_NAME=api-mgmt-reddoglabs-com
+WEBAPP_NAME=appreddoglabscom
+
+
+
+### SET CONTEXT ###
+SUBSCRIPTION_NAME=tb-sandbox
+RESOURCE_GROUP_NAME=tbsbwe-integration
+
+#echo $SUBSCRIPTION_NAME
+az account set -s "$SUBSCRIPTION_NAME"
+az group create --name $RESOURCE_GROUP_NAME --location westeurope
+
+
+### CREATE SSL CERTIFICATE (USING LETSENCRYPT AND AZURE DNS)
+ACME_APP_ID="4fa4d1f6-29d4-4460-aa33-7887039bae1d"
+DNS_CONTRIBUTOR_ROLE_NAME="DNS TXT Record Contributor"
+CERT_PASSWORD=$(< /dev/urandom tr -dc _A-Za-z0-9 | head -c${1:-32})
+PARENT_DNSZONE_ID="/subscriptions/0a56b3b5-ba17-4825-9876-3706ec8fdab7/resourceGroups/tbrgpr-reddoglabs/providers/Microsoft.Network/dnszones/reddoglabs.com"
+DNSZONE_ID=$(az network dns zone create -g $RESOURCE_GROUP_NAME -n $DOMAIN_NAME -p $PARENT_DNSZONE_ID --query 'id' -o tsv)
+#echo $DNSZONE_ID
+
+az role assignment create --assignee $ACME_APP_ID --role "$DNS_CONTRIBUTOR_ROLE_NAME" --scope $DNSZONE_ID
+#wget -O -  https://get.acme.sh | sh # Get acme.sh
+# . /home/madsd/.bashrc # Refresh Bash config
+acme.sh --issue --dns dns_azure -d $DOMAIN_NAME
+openssl pkcs12 -export -out $DOMAIN_NAME.pfx -inkey "/home/madsd/.acme.sh/$DOMAIN_NAME/$DOMAIN_NAME.key" -in "/home/madsd/.acme.sh/$DOMAIN_NAME/$DOMAIN_NAME.cer" -passout pass:$CERT_PASSWORD
+az keyvault certificate import --vault-name $KEYVAULT_NAME --file ./$DOMAIN_NAME.pfx --password $CERT_PASSWORD --name $KEYVAULT_SECRET_NAME
+
+### CREATE WEB APP (CUSTOM DOMAIN USING AZURE DNS - SSL CERTIFICATE USING KEY VAULT) ###
+az network dns record-set txt add-record -g $RESOURCE_GROUP_NAME --zone-name $DOMAIN_NAME --record-set-name awverify --value "$WEBAPP_NAME.azurewebsites.net"
+
+KEYVAULT_ID=$(az keyvault show --name $KEYVAULT_NAME --query 'id' -o tsv)
+#echo $KEYVAULT_ID
+az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.app-service-domain-and-ssl.json --mode Incremental --parameters webAppName=$WEBAPP_NAME --parameters customHostName=$DOMAIN_NAME --parameters existingKeyVaultId=$KEYVAULT_ID --parameters existingKeyVaultSecretName=$KEYVAULT_SECRET_NAME
+
+### SET CUSTOM DOMAIN DNS (USING VIP AND AZURE DNS)
+WEB_APP_IP=$(az webapp show --name $WEBAPP_NAME --resource-group $RESOURCE_GROUP_NAME --query "hostNameSslStates[?name=='$DOMAIN_NAME'].virtualIp | [0]" -o tsv)
+#echo $WEB_APP_IP
+az network dns record-set a add-record -g $RESOURCE_GROUP_NAME --zone-name $DOMAIN_NAME --record-set-name @ --ipv4-address "$WEB_APP_IP"
+echo "Done"
+
+### CREATE FRONT DOOR DNS ENTRY ###
+az network dns record-set cname set-record -g $RESOURCE_GROUP_NAME --zone-name $DOMAIN_NAME --record-set-name afdverify --cname "afdverify.madsd.azurefd.net"
+
+az network dns record-set cname set-record  --record-set-name app --cname "madsd.azurefd.net" -g tbrgpr-reddoglabs --subscription 0a56b3b5-ba17-4825-9876-3706ec8fdab7 --zone-name reddoglabs.com
+
+
+az resource update --id $(az keyvault show --name tb-certs -o tsv | awk '{print $1}') --set properties.enableSoftDelete=true

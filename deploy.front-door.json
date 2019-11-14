@@ -1,0 +1,123 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourceName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the frontdoor resource."
+            }
+        },
+        "location": {
+            "type": "string",
+            "metadata": {
+                "description": "The location of the frontdoor resource."
+            }
+        }
+    },
+    "resources": [
+        {
+            "apiVersion": "2019-04-01",
+            "type": "Microsoft.Network/frontdoors",
+            "name": "[parameters('resourceName')]",
+            "location": "[parameters('location')]",
+            "tags": {},
+            "properties": {
+                "friendlyName": "madsd",
+                "enabledState": "Enabled",
+                "healthProbeSettings": [
+                    {
+                        "name": "healthProbeSettings-1564131510766",
+                        "properties": {
+                            "path": "/",
+                            "protocol": "Https",
+                            "intervalInSeconds": 30
+                        },
+                        "id": "/subscriptions/a6f7834d-3304-4890-82af-ec04cb382539/resourceGroups/frontdoor/providers/Microsoft.Network/frontdoors/madsd/healthProbeSettings/healthProbeSettings-1564131510766"
+                    }
+                ],
+                "loadBalancingSettings": [
+                    {
+                        "name": "loadBalancingSettings-1564131510766",
+                        "properties": {
+                            "sampleSize": 4,
+                            "successfulSamplesRequired": 2,
+                            "additionalLatencyMilliseconds": 0
+                        },
+                        "id": "/subscriptions/a6f7834d-3304-4890-82af-ec04cb382539/resourceGroups/frontdoor/providers/Microsoft.Network/frontdoors/madsd/loadBalancingSettings/loadBalancingSettings-1564131510766"
+                    }
+                ],
+                "frontendEndpoints": [
+                    {
+                        "name": "madsd-azurefd-net",
+                        "properties": {
+                            "hostName": "madsd.azurefd.net",
+                            "sessionAffinityEnabledState": "Disabled",
+                            "sessionAffinityTtlSeconds": 0,
+                            "webApplicationFirewallPolicyLink": null,
+                            "customHttpsConfiguration": null
+                        },
+                        "id": "/subscriptions/a6f7834d-3304-4890-82af-ec04cb382539/resourceGroups/frontdoor/providers/Microsoft.Network/frontdoors/madsd/frontendEndpoints/madsd-azurefd-net"
+                    }
+                ],
+                "backendPools": [
+                    {
+                        "name": "webapppool",
+                        "properties": {
+                            "backends": [
+                                {
+                                    "address": "madsdwebapp.azurewebsites.net",
+                                    "enabledState": "Enabled",
+                                    "httpPort": 80,
+                                    "httpsPort": 443,
+                                    "priority": 1,
+                                    "weight": 50,
+                                    "backendHostHeader": "madsdwebapp.azurewebsites.net"
+                                }
+                            ],
+                            "loadBalancingSettings": {
+                                "id": "/subscriptions/a6f7834d-3304-4890-82af-ec04cb382539/resourceGroups/frontdoor/providers/Microsoft.Network/frontdoors/madsd/loadBalancingSettings/loadBalancingSettings-1564131510766"
+                            },
+                            "healthProbeSettings": {
+                                "id": "/subscriptions/a6f7834d-3304-4890-82af-ec04cb382539/resourceGroups/frontdoor/providers/Microsoft.Network/frontdoors/madsd/healthProbeSettings/healthProbeSettings-1564131510766"
+                            }
+                        },
+                        "id": "/subscriptions/a6f7834d-3304-4890-82af-ec04cb382539/resourceGroups/frontdoor/providers/Microsoft.Network/frontdoors/madsd/backendPools/webapppool"
+                    }
+                ],
+                "routingRules": [
+                    {
+                        "name": "routingrule",
+                        "properties": {
+                            "frontendEndpoints": [
+                                {
+                                    "id": "/subscriptions/a6f7834d-3304-4890-82af-ec04cb382539/resourceGroups/frontdoor/providers/Microsoft.Network/frontdoors/madsd/frontendEndpoints/madsd-azurefd-net"
+                                }
+                            ],
+                            "acceptedProtocols": [
+                                "Https"
+                            ],
+                            "patternsToMatch": [
+                                "/*"
+                            ],
+                            "enabledState": "Enabled",
+                            "routeConfiguration": {
+                                "@odata.type": "#Microsoft.Azure.FrontDoor.Models.FrontdoorForwardingConfiguration",
+                                "customForwardingPath": null,
+                                "forwardingProtocol": "HttpsOnly",
+                                "backendPool": {
+                                    "id": "/subscriptions/a6f7834d-3304-4890-82af-ec04cb382539/resourceGroups/frontdoor/providers/Microsoft.Network/frontdoors/madsd/backendPools/webapppool"
+                                },
+                                "cacheConfiguration": {
+                                    "queryParameterStripDirective": "StripAll",
+                                    "dynamicCompression": "Enabled"
+                                }
+                            }
+                        },
+                        "id": "/subscriptions/a6f7834d-3304-4890-82af-ec04cb382539/resourceGroups/frontdoor/providers/Microsoft.Network/frontdoors/madsd/routingRules/routingrule"
+                    }
+                ]
+            }
+        }
+    ]
+}

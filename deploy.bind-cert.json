@@ -1,0 +1,48 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",    
+    "parameters": {
+        "webAppName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the webApp - must be globally unique."
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "The location of the webApp"
+            }
+        },
+        "customDomain": {
+            "type": "string",
+            "metadata": {
+                "description": "Custom domain (e.g. www.contoso.com)"
+            }
+        }
+    },
+    "variables": {  
+        "webAppName": "[parameters('webAppName')]",
+        "location": "[parameters('location')]",
+        "customDomain": "[parameters('customDomain')]"
+
+    },
+    "resources": [
+        {
+            "name": "[variables('webAppName')]",
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2018-11-01",
+            "location": "[variables('location')]",
+            "properties": {
+                "hostNameSslStates": [
+                    {
+                        "name":"[variables('customDomain')]",
+                        "sslState":"SniEnabled",
+                        "thumbprint":"[reference(concat('Microsoft.Web/certificates/', variables('customDomain')), '2018-11-01').thumbprint]"
+                    }
+                ]
+            }
+        }
+    ]
+}

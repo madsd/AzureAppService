@@ -1,0 +1,9 @@
+TAKE=take3
+RESOURCE_GROUP_NAME=asev2-$TAKE
+VNET_NAME=ase-vnet-$TAKE
+SUBNET_NAME=ase-subnet-$TAKE
+LOCATION=westeurope
+echo $RESOURCE_GROUP_NAME
+az group create --name $RESOURCE_GROUP_NAME --location $LOCATION
+
+az network vnet create --name $VNET_NAME --resource-group $RESOURCE_GROUP_NAME --location $LOCATION --address-prefixes 10.240.0.0/20 --subnet-name $SUBNET_NAME --subnet-prefixes 10.240.0.0/25 

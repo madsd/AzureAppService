@@ -1,0 +1,6 @@
+curl https://get.acme.sh | sh
+
+export AZUREDNS_SUBSCRIPTIONID="a6f7834d-3304-4890-82af-ec04cb382539"
+export AZUREDNS_TENANTID="72f988bf-86f1-41af-91ab-2d7cd011db47"
+export AZUREDNS_APPID="4fa4d1f6-29d4-4460-aa33-7887039bae1d"          # appid of the service principal
+export AZUREDNS_CLIENTSECRET="l79Hjw_R5JFHP+R-p2IdYP/?Fd5vEvx3"   # password from creating the service principal

@@ -1,0 +1,42 @@
+az account show
+RESOURCE_GROUP_NAME=madsd-test
+RESOURCE_GROUP_NAME=madsd-test-windows
+RESOURCE_GROUP_NAME=madsd-test-windows-docker
+RESOURCE_GROUP_NAME=madsd-test-linux
+RESOURCE_GROUP_NAME=madsd-test-linux-docker
+echo $RESOURCE_GROUP_NAME
+az group create --name $RESOURCE_GROUP_NAME --location westeurope
+
+# Empty Resource Group
+az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.empty.json --mode Complete
+
+# Windows App
+az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.windows.json --mode Incremental
+
+# Windows Docker
+az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.windows-docker.json --mode Incremental
+
+# Linux App 
+az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.linux.json --mode Incremental
+
+# Linux Docker
+az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.linux-docker.json --mode Incremental
+
+
+
+curl -q --resolve linuxdocker.turnbitz.dk:443:51.105.200.125 https://linuxdocker.turnbitz.dk/
+
+RESOURCE_GROUP_NAME=webapp-global
+az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.afd-iprestrictions.json --mode Incremental
+
+WEB_APP_NAME=eus-madsd
+WEB_APP_LOCATION='East US'
+az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.afd-iprestrictions.json --mode Incremental --parameters webAppName=$WEB_APP_NAME webAppLocation='$WEB_APP_LOCATION'
+
+IP_FILTER="{'ipAddress': '192.168.0.0/16', 'action': 'Allow', 'priority': 250, 'name': 'afd-int', 'description': 'Internal Addresses'}"
+IP_FILTER_ARRAY='("$IP_FILTER")'
+echo $IP_FILTER_ARRAY
+az resource update --id /subscriptions/a6f7834d-3304-4890-82af-ec04cb382539/resourceGroups/webapp-global/providers/Microsoft.Web/sites/weu-madsd/config/web --api-version 2018-11-01 --set properties.ipSecurityRestrictions="$IP_FILTER_ARRAY"
+
+
+az group deployment create --resource-group webapp-global --template-file ./deploy.managed-cert.json --mode Incremental --parameters webAppName=madsd-cert webAppLocation='West Europe' customDomain=test.reddoglabs.com

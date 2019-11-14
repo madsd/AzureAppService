@@ -1,0 +1,96 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vaults_tb_certs_name": {
+            "defaultValue": "tb-certs",
+            "type": "string"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2016-10-01",
+            "name": "[parameters('vaults_tb_certs_name')]",
+            "location": "westeurope",
+            "properties": {
+                "sku": {
+                    "family": "A",
+                    "name": "standard"
+                },
+                "tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                "accessPolicies": [
+                    {
+                        "tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                        "objectId": "f8daea97-62e7-4026-becf-13c2ea98e8b4",
+                        "permissions": {
+                            "keys": [],
+                            "secrets": [],
+                            "certificates": [
+                                "get"
+                            ]
+                        }
+                    },
+                    {
+                        "tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                        "objectId": "21bf1420-2ed9-48b9-bf6d-ece1337d4fd1",
+                        "permissions": {
+                            "keys": [],
+                            "secrets": [],
+                            "certificates": [
+                                "get"
+                            ]
+                        }
+                    },
+                    {
+                        "tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                        "objectId": "0b9188a0-540d-4262-9311-61bb1a0235ef",
+                        "permissions": {
+                            "keys": [
+                                "get",
+                                "list",
+                                "update",
+                                "create",
+                                "import",
+                                "delete",
+                                "recover",
+                                "backup",
+                                "restore"
+                            ],
+                            "secrets": [
+                                "get",
+                                "list",
+                                "set",
+                                "delete",
+                                "recover",
+                                "backup",
+                                "restore"
+                            ],
+                            "certificates": [
+                                "get",
+                                "list",
+                                "update",
+                                "create",
+                                "import",
+                                "delete",
+                                "recover",
+                                "backup",
+                                "restore",
+                                "managecontacts",
+                                "manageissuers",
+                                "getissuers",
+                                "listissuers",
+                                "setissuers",
+                                "deleteissuers"
+                            ]
+                        }
+                    }
+                ],
+                "enabledForDeployment": false,
+                "enabledForDiskEncryption": false,
+                "enabledForTemplateDeployment": true
+            }
+        }
+    ]
+}

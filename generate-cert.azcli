@@ -1,0 +1,14 @@
+domainName=app.reddoglabs.com
+domainFriendlyName=app-reddoglabs-com
+sudo certbot certonly --manual -d $domainName --agree-tos --no-bootstrap --manual-public-ip-logging-ok --preferred-challenges dns-01 --server https://acme-v02.api.letsencrypt.org/directory
+
+domainName=app.reddoglabs.com
+nslookup -q=TXT _acme-challenge.$domainName 8.8.8.8
+
+sudo openssl pkcs12 -export -out "$domainFriendlyName.pfx" -inkey "/etc/letsencrypt/live/$domainName/privkey.pem" -in "/etc/letsencrypt/live/$domainName/cert.pem" -certfile "/etc/letsencrypt/live/$domainName/chain.pem"
+
+sudo openssl x509 -outform der -in "/etc/letsencrypt/live/$domainName/cert.pem" -out "$domainFriendlyName.cer"
+
+sudo mkdir --parents /mnt/c/cert/$domainFriendlyName
+sudo cp "$domainFriendlyName.pfx" /mnt/c/cert/$domainFriendlyName
+sudo cp "$domainFriendlyName.cer" /mnt/c/cert/$domainFriendlyName

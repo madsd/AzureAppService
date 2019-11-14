@@ -1,0 +1,4 @@
+RESOURCE_GROUP_NAME=app-gateway-app-service-simple
+LOCATION=westeurope
+az group create --name $RESOURCE_GROUP_NAME --location $LOCATION
+az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.app-gateway-app-service-simple.json --mode Incremental --query properties.outputs
