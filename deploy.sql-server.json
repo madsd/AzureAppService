@@ -1,0 +1,65 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "sqlserver_password": {
+            "type": "securestring"
+        }
+    },
+    "variables": {
+        "sqlserver_name": "madsd-secure-server",
+        "sqlserver_username": "madsd",
+        "sqlserver_password": "[parameters('sqlserver_password')]",
+        "sqlserver_database_1_name": "madsd-secure-db",
+        "sqlserver_database_1_SKU": "S0"
+    },
+    "resources": [
+        {
+            "comments": "",
+            "type": "Microsoft.Sql/servers",
+            "kind": "v12.0",
+            "name": "[variables('sqlserver_name')]",
+            "apiVersion": "2015-05-01-preview",
+            "location": "westeurope",
+            "scale": null,
+            "properties": {
+                "administratorLogin": "[variables('sqlserver_username')]",
+                "administratorLoginPassword": "[variables('sqlserver_password')]",
+                "version": "12.0"
+            },
+            "dependsOn": [
+            ]
+        },
+        {
+            "type": "Microsoft.Sql/servers/databases",
+            "sku": {
+                "name": "[variables('sqlserver_database_1_SKU')]"
+            },
+            "kind": "v12.0,user",
+            "name": "[concat(variables('sqlserver_name'), '/', variables('sqlserver_database_1_name'))]",
+            "apiVersion": "2017-03-01-preview",
+            "location": "westeurope",
+            "scale": null,
+            "properties": {
+                "collation": "SQL_Latin1_General_CP1_CI_AS",
+                "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+                "zoneRedundant": false
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', variables('sqlserver_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Sql/servers/databases/transparentDataEncryption",
+            "apiVersion": "2014-04-01",
+            "name": "[concat(variables('sqlserver_name'), '/', variables('sqlserver_database_1_name') ,'/current')]",
+            "location": "West Europe",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers/databases', variables('sqlserver_name'), variables('sqlserver_database_1_name'))]"
+            ],
+            "properties": {
+                "status": "Enabled"
+            }
+        }
+    ]
+}

@@ -1,0 +1,7 @@
+RESOURCE_GROUP_NAME=health-alert
+ACTION_GROUP='/subscriptions/a6f7834d-3304-4890-82af-ec04cb382539/resourcegroups/health-alert/providers/microsoft.insights/actiongroups/resource-alert'
+ALERT_NAME=myAlert
+
+echo $ACTION_GROUP
+
+az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./resourcehealth.deploy.json --mode Incremental --parameters actionGroupResourceId=$ACTION_GROUP activityLogAlertName=$ALERT_NAME

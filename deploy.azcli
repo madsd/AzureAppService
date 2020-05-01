@@ -1,5 +1,5 @@
 az account show
-RESOURCE_GROUP_NAME=madsd-test
+RESOURCE_GROUP_NAME=secure-resources
 RESOURCE_GROUP_NAME=madsd-test-windows
 RESOURCE_GROUP_NAME=madsd-test-windows-docker
 RESOURCE_GROUP_NAME=madsd-test-linux
@@ -22,7 +22,7 @@ az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file
 # Linux Docker
 az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.linux-docker.json --mode Incremental
 
-
+az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.front-door-full.json --mode Incremental
 
 curl -q --resolve linuxdocker.turnbitz.dk:443:51.105.200.125 https://linuxdocker.turnbitz.dk/
 
@@ -31,7 +31,7 @@ az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file
 
 WEB_APP_NAME=eus-madsd
 WEB_APP_LOCATION='East US'
-az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.afd-iprestrictions.json --mode Incremental --parameters webAppName=$WEB_APP_NAME webAppLocation='$WEB_APP_LOCATION'
+az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.sql-server.json --mode Incremental --parameters sqlserver_password='AzurePassw0rd1'
 
 IP_FILTER="{'ipAddress': '192.168.0.0/16', 'action': 'Allow', 'priority': 250, 'name': 'afd-int', 'description': 'Internal Addresses'}"
 IP_FILTER_ARRAY='("$IP_FILTER")'
@@ -40,3 +40,5 @@ az resource update --id /subscriptions/a6f7834d-3304-4890-82af-ec04cb382539/reso
 
 
 az group deployment create --resource-group webapp-global --template-file ./deploy.managed-cert.json --mode Incremental --parameters webAppName=madsd-cert webAppLocation='West Europe' customDomain=test.reddoglabs.com
+
+az webapp config ssl import --key-vault 'subscriptions/a6f7834d-3304-4890-82af-ec04cb382539/resourceGroups/certs/providers/Microsoft.KeyVault/vaults/tb-certs/' --key-vault-certificate-name api-reddoglabs-com --name madsd-cert -g webapp-global

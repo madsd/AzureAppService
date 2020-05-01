@@ -1,0 +1,34 @@
+# Install Front Door Extension
+az extension add --name front-door
+
+# Variables
+RESOURCE_GROUP_NAME="yourResourceGroup"
+APP_NAME="webapp$RANDOM"
+FRONT_DOOR_NAME="frontdoor$RANDOM"
+LOCATION="WestEurope"
+
+# Create Resource group
+az group create --name $RESOURCE_GROUP_NAME --location $LOCATION
+
+# Create an App Service Plan
+az appservice plan create --resource-group $RESOURCE_GROUP_NAME \
+    --name myAppServicePlan --location $LOCATION --sku S1
+
+# Create a Web App
+az webapp create --resource-group $RESOURCE_GROUP_NAME \
+    --name $APP_NAME --plan myAppServicePlan
+
+appFqdn=$(az webapp show --name $APP_NAME --resource-group $RESOURCE_GROUP_NAME --query defaultHostName -o tsv)
+
+# Create Azure Front Door
+az network front-door create --resource-group $RESOURCE_GROUP_NAME \
+    --name $FRONT_DOOR_NAME --backend-address $appFqdn --backend-host-header $appFqdn \
+    --accepted-protocols Http Https
+
+fdFqdn=$(az network front-door frontend-endpoint show --front-door-name $FRONT_DOOR_NAME --resource-group $RESOURCE_GROUP_NAME --name DefaultFrontendEndpoint --query hostName --output tsv)
+
+az network front-door frontend-endpoint show --front-door-name $FRONT_DOOR_NAME --resource-group $RESOURCE_GROUP_NAME \
+    --name DefaultFrontendEndpoint --query {FrontDoorFqdn:hostName} --output table
+
+#az webapp config access-restriction add --resource-group $RESOURCE_GROUP_NAME --name $APP_NAME \
+#    --rule-name 'Azure Front Door' --ip-address AFD --x-forwarded-host $fdFqdn

@@ -1,0 +1,36 @@
+Get-ChildItem Env: | Sort Name
+$Env:ARMCLIENT_ENV = "DOGFOOD"
+$Env:ARMCLIENT_STAMP = "kudu1geo"
+$Env:ARMCLIENT_VERBOSE = "1"
+armclient login #auxtm230@live.com-fud
+
+armclient GET /subscriptions/00e7bb72-7725-4249-8e6b-0d2632b3bfc1/resourceGroups/Default-Web-EastUS/providers/microsoft.web/sites?api-version=2018-11-01-privatepreview
+
+armclient GET /subscriptions/00e7bb72-7725-4249-8e6b-0d2632b3bfc1/resourceGroups/Default-Web-EastUS/providers/microsoft.web/sites/suwatchme01/config/web?api-version=2018-11-01-privatepreview
+
+# Add Corpnet
+armclient PATCH /subscriptions/00e7bb72-7725-4249-8e6b-0d2632b3bfc1/resourceGroups/Default-Web-EastUS/providers/microsoft.web/sites/suwatchme01/config/web?api-version=2018-11-01-privatepreview `@payload.json
+
+# Add Block
+armclient PATCH /subscriptions/00e7bb72-7725-4249-8e6b-0d2632b3bfc1/resourceGroups/Default-Web-EastUS/providers/microsoft.web/sites/suwatchme01/config/web?api-version=2018-11-01-privatepreview `@payload_block.json
+
+# Add AFD
+armclient PATCH /subscriptions/00e7bb72-7725-4249-8e6b-0d2632b3bfc1/resourceGroups/Default-Web-EastUS/providers/microsoft.web/sites/suwatchme01/config/web?api-version=2018-11-01-privatepreview `@payload_afd.json
+
+# Add AFD host
+armclient PATCH /subscriptions/00e7bb72-7725-4249-8e6b-0d2632b3bfc1/resourceGroups/Default-Web-EastUS/providers/microsoft.web/sites/suwatchme01/config/web?api-version=2018-11-01-privatepreview `@payload_afd_madsd.json
+
+# Add AFD host + corp
+armclient PATCH /subscriptions/00e7bb72-7725-4249-8e6b-0d2632b3bfc1/resourceGroups/Default-Web-EastUS/providers/microsoft.web/sites/suwatchme01/config/web?api-version=2018-11-01-privatepreview `@payload_afd_madsd_corp.json
+
+
+# Reset restrictions
+armclient PATCH /subscriptions/00e7bb72-7725-4249-8e6b-0d2632b3bfc1/resourceGroups/Default-Web-EastUS/providers/microsoft.web/sites/suwatchme01/config/web?api-version=2018-11-01-privatepreview `@reset.json
+
+curl http://suwatchme01.kudu1.antares-test.windows-int.net/
+curl http://madsd-webs.azurefd.net/
+curl http://madsd.reddoglabs.com/
+curl http://madsd.azurefd.net/
+curl http://madsd.azurefd.net/ -H x-forwarded-host=madsd.reddoglabs.com
+curl -H "X-Forwarded-For: 192.168.0.0" -H "X-Forwarded-Host: rødgrød.com" http://suwatchme01.kudu1.antares-test.windows-int.net/
+

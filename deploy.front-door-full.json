@@ -1,0 +1,164 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "webAppName": {
+            "defaultValue": "myWebApp",
+            "type": "string"
+        },
+        "frontDoorName": {
+            "defaultValue": "myFrontDoor",
+            "type": "string"
+        },
+        "location": {
+            "defaultValue": "[resourceGroup().location]",
+            "type": "string"
+        }
+     },
+    "variables": {
+        "location": "[parameters('location')]",
+        "webAppName": "[concat(parameters('webAppName'), '-', uniqueString(resourceGroup().id))]",
+        "webAppPlanName": "[concat(parameters('webAppName'), 'Plan', '-', uniqueString(resourceGroup().id))]",
+        "webAppPlanSku": "S1",
+        "webAppPlanId": "[resourceId('Microsoft.Web/serverfarms', variables('webAppPlanName'))]",
+        "afdName": "[concat(parameters('frontDoorName'), '-', uniqueString(resourceGroup().id))]",
+        "afdLoadbalancerSettingsName": "afdLoadbalancerSettings",
+        "afdLoadbalancerSettingsId": "[resourceId('Microsoft.Network/frontdoors/loadBalancingSettings/', variables('afdName'), variables('afdLoadbalancerSettingsName'))]",
+        "afdHealthProbeSettingsName": "afdHealthProbeSettings",
+        "afdHealthProbeSettingsId": "[resourceId('Microsoft.Network/frontdoors/healthProbeSettings/', variables('afdName'), variables('afdHealthProbeSettingsName'))]",
+        "afdFrontendEndpointName": "[concat(variables('webAppName'), '-azurefd-net')]",
+        "afdFrontendEndpointId": "[resourceId('Microsoft.Network/frontdoors/frontendEndpoints/', variables('afdName'), variables('afdFrontendEndpointName'))]",
+        "afdGwBackendAddressPoolName": "[concat('afd', variables('webAppName'), 'BackendPool')]",
+        "afdGwBackendAddressPoolId": "[resourceId('Microsoft.Network/frontdoors/backendPools/', variables('afdName'), variables('afdGwBackendAddressPoolName'))]",
+        "afdRoutingRuleName": "afdRoutingRule"
+    },
+    "resources": [
+                {
+            "type": "Microsoft.Web/serverfarms",
+            "name": "[variables('webAppPlanName')]",
+            "apiVersion": "2018-02-01",
+            "location": "[variables('location')]",
+            "properties": {
+                 "reserved": "false"
+            },
+            "sku": {
+                "name": "[variables('webAppPlanSku')]",
+                "capacity": 1
+            }
+        },
+        {
+            "name": "[variables('webAppName')]",
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2018-11-01",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[variables('webAppPlanId')]"
+            ],
+            "properties": {
+              "serverFarmId": "[variables('webAppPlanId')]",
+              "reserved": "false",
+              "siteConfig": {
+                  "http20Enabled": "true",
+                  "minTlsVersion": "1.2",
+                  "ipSecurityRestrictions": []
+              },
+              "httpsOnly": "false"
+            }
+        },
+        {
+            "apiVersion": "2019-04-01",
+            "type": "Microsoft.Network/frontdoors",
+            "name": "[variables('afdName')]",
+            "location": "[variables('location')]",
+            "tags": {},
+            "dependsOn": "",
+            "properties": {
+                "friendlyName": "[variables('afdName')]",
+                "enabledState": "Enabled",
+                "healthProbeSettings": [
+                    {
+                        "name": "[variables('afdHealthProbeSettingsName')]",
+                        "properties": {
+                            "path": "/",
+                            "protocol": "Https",
+                            "intervalInSeconds": 30
+                        }
+                    }
+                ],
+                "loadBalancingSettings": [
+                    {
+                        "name": "[variables('afdLoadbalancerSettingsName')]",
+                        "properties": {
+                            "sampleSize": 4,
+                            "successfulSamplesRequired": 2,
+                            "additionalLatencyMilliseconds": 0
+                        }
+                    }
+                ],
+                "frontendEndpoints": [
+                    {
+                        "name": "[variables('afdFrontendEndpointName')]",
+                        "properties": {
+                            "hostName": "[concat(variables('afdName'), '.azurefd.net')]",
+                            "sessionAffinityEnabledState": "Disabled",
+                            "sessionAffinityTtlSeconds": 0,
+                            "webApplicationFirewallPolicyLink": null,
+                            "customHttpsConfiguration": null
+                        }
+                    }
+                ],
+                "backendPools": [
+                    {
+                        "name": "[variables('afdGwBackendAddressPoolName')]",
+                        "properties": {
+                            "backends": [
+                                {
+                                    "address": "[reference(variables('webAppName')).hostNames[0]]",
+                                    "enabledState": "Enabled",
+                                    "httpPort": 80,
+                                    "httpsPort": 443,
+                                    "priority": 1,
+                                    "weight": 50,
+                                    "backendHostHeader": "[reference(variables('webAppName')).hostNames[0]]"
+                                }
+                            ],
+                            "loadBalancingSettings": {
+                                "id": "[variables('afdLoadbalancerSettingsId')]"
+                            },
+                            "healthProbeSettings": {
+                                "id": "[variables('afdHealthProbeSettingsId')]"
+                            }
+                        }
+                    }
+                ],
+                "routingRules": [
+                    {
+                        "name": "[variables('afdRoutingRuleName')]",
+                        "properties": {
+                            "frontendEndpoints": [
+                                {
+                                    "id": "[variables('afdFrontendEndpointId')]"
+                                }
+                            ],
+                            "acceptedProtocols": [
+                                "Http",
+                                "Https"
+                            ],
+                            "patternsToMatch": [
+                                "/*"
+                            ],
+                            "enabledState": "Enabled",
+                            "routeConfiguration": {
+                                "@odata.type": "#Microsoft.Azure.FrontDoor.Models.FrontdoorForwardingConfiguration",
+                                "forwardingProtocol": "MatchRequest",
+                                "backendPool": {
+                                    "id": "[variables('afdGwBackendAddressPoolId')]"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

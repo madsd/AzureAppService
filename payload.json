@@ -1,0 +1,11 @@
+{
+  "properties": {
+    "ipSecurityRestrictions": [
+      {
+        "action": "Allow",
+        "ipAddress": "131.107.0.0/16",
+        "priority": 200
+      }
+    ]
+  }
+}

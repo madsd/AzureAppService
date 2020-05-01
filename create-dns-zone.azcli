@@ -1,17 +1,27 @@
-DOMAIN_NAME=api-mgmt.reddoglabs.com
-KEYVAULT_NAME=apim-certs
-KEYVAULT_SECRET_NAME=api-mgmt-reddoglabs-com
-WEBAPP_NAME=appreddoglabscom
+export AZUREDNS_SUBSCRIPTIONID="0a56b3b5-ba17-4825-9876-3706ec8fdab7"
+export AZUREDNS_TENANTID="72f988bf-86f1-41af-91ab-2d7cd011db47"
+export AZUREDNS_APPID="4fa4d1f6-29d4-4460-aa33-7887039bae1d"          # appid of the service principal
+export AZUREDNS_CLIENTSECRET="OF....."   # password from creating the service principal
+
+DOMAIN_NAME=renew.reddoglabs.com
+KEYVAULT_NAME=reddoglabs-com
+KEYVAULT_SECRET_NAME=renew-reddoglabs-com
+WEBAPP_NAME=madsdrenew
 
 
 
 ### SET CONTEXT ###
-SUBSCRIPTION_NAME=tb-sandbox
-RESOURCE_GROUP_NAME=tbsbwe-integration
+DNS_SUBSCRIPTION_NAME=tb-prod
+DNS_RESOURCE_GROUP_NAME=tbrgpr-reddoglabs
+WEB_SUBSCRIPTION_NAME=tb-sandbox
+WEB_RESOURCE_GROUP_NAME=renew-test
 
 #echo $SUBSCRIPTION_NAME
-az account set -s "$SUBSCRIPTION_NAME"
-az group create --name $RESOURCE_GROUP_NAME --location westeurope
+az account set -s "$DNS_SUBSCRIPTION_NAME"
+az group create --name $DNS_RESOURCE_GROUP_NAME --location westeurope
+
+az account set -s "$WEB_SUBSCRIPTION_NAME"
+az group create --name $WEB_RESOURCE_GROUP_NAME --location westeurope
 
 
 ### CREATE SSL CERTIFICATE (USING LETSENCRYPT AND AZURE DNS)
@@ -19,26 +29,32 @@ ACME_APP_ID="4fa4d1f6-29d4-4460-aa33-7887039bae1d"
 DNS_CONTRIBUTOR_ROLE_NAME="DNS TXT Record Contributor"
 CERT_PASSWORD=$(< /dev/urandom tr -dc _A-Za-z0-9 | head -c${1:-32})
 PARENT_DNSZONE_ID="/subscriptions/0a56b3b5-ba17-4825-9876-3706ec8fdab7/resourceGroups/tbrgpr-reddoglabs/providers/Microsoft.Network/dnszones/reddoglabs.com"
-DNSZONE_ID=$(az network dns zone create -g $RESOURCE_GROUP_NAME -n $DOMAIN_NAME -p $PARENT_DNSZONE_ID --query 'id' -o tsv)
+az account set -s "$DNS_SUBSCRIPTION_NAME"
+DNSZONE_ID=$(az network dns zone create -g $DNS_RESOURCE_GROUP_NAME -n $DOMAIN_NAME -p $PARENT_DNSZONE_ID --query 'id' -o tsv)
 #echo $DNSZONE_ID
 
 az role assignment create --assignee $ACME_APP_ID --role "$DNS_CONTRIBUTOR_ROLE_NAME" --scope $DNSZONE_ID
 #wget -O -  https://get.acme.sh | sh # Get acme.sh
 # . /home/madsd/.bashrc # Refresh Bash config
-acme.sh --issue --dns dns_azure -d $DOMAIN_NAME
+acme.sh --issue --dns dns_azure -d $DOMAIN_NAME # --force # to renew
 openssl pkcs12 -export -out $DOMAIN_NAME.pfx -inkey "/home/madsd/.acme.sh/$DOMAIN_NAME/$DOMAIN_NAME.key" -in "/home/madsd/.acme.sh/$DOMAIN_NAME/$DOMAIN_NAME.cer" -passout pass:$CERT_PASSWORD
+az account set -s "$KV_SUBSCRIPTION_NAME"
 az keyvault certificate import --vault-name $KEYVAULT_NAME --file ./$DOMAIN_NAME.pfx --password $CERT_PASSWORD --name $KEYVAULT_SECRET_NAME
 
 ### CREATE WEB APP (CUSTOM DOMAIN USING AZURE DNS - SSL CERTIFICATE USING KEY VAULT) ###
-az network dns record-set txt add-record -g $RESOURCE_GROUP_NAME --zone-name $DOMAIN_NAME --record-set-name awverify --value "$WEBAPP_NAME.azurewebsites.net"
+az account set -s "$DNS_SUBSCRIPTION_NAME"
+az network dns record-set txt add-record -g $DNS_RESOURCE_GROUP_NAME --zone-name $DOMAIN_NAME --record-set-name awverify --value "$WEBAPP_NAME.azurewebsites.net"
 
 KEYVAULT_ID=$(az keyvault show --name $KEYVAULT_NAME --query 'id' -o tsv)
 #echo $KEYVAULT_ID
-az group deployment create --resource-group $RESOURCE_GROUP_NAME --template-file ./deploy.app-service-domain-and-ssl.json --mode Incremental --parameters webAppName=$WEBAPP_NAME --parameters customHostName=$DOMAIN_NAME --parameters existingKeyVaultId=$KEYVAULT_ID --parameters existingKeyVaultSecretName=$KEYVAULT_SECRET_NAME
+
+az account set -s "$WEB_SUBSCRIPTION_NAME"
+az deployment group create --resource-group $WEB_RESOURCE_GROUP_NAME --template-file ./deploy.app-service-domain-and-ssl.json --mode Incremental --parameters webAppName=$WEBAPP_NAME --parameters customHostName=$DOMAIN_NAME --parameters existingKeyVaultId=$KEYVAULT_ID --parameters existingKeyVaultSecretName=$KEYVAULT_SECRET_NAME
 
 ### SET CUSTOM DOMAIN DNS (USING VIP AND AZURE DNS)
-WEB_APP_IP=$(az webapp show --name $WEBAPP_NAME --resource-group $RESOURCE_GROUP_NAME --query "hostNameSslStates[?name=='$DOMAIN_NAME'].virtualIp | [0]" -o tsv)
+WEB_APP_IP=$(az webapp show --name $WEBAPP_NAME --resource-group $WEB_RESOURCE_GROUP_NAME --query "hostNameSslStates[?name=='$DOMAIN_NAME'].virtualIp | [0]" -o tsv)
 #echo $WEB_APP_IP
+az account set -s "$DNS_SUBSCRIPTION_NAME"
 az network dns record-set a add-record -g $RESOURCE_GROUP_NAME --zone-name $DOMAIN_NAME --record-set-name @ --ipv4-address "$WEB_APP_IP"
 echo "Done"
 

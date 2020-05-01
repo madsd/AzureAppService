@@ -1,0 +1,11 @@
+{
+    "properties": {
+      "ipSecurityRestrictions": [
+          {
+              "action": "Allow",
+              "ipAddress": "AFD",
+              "priority": 200
+          }
+      ]
+    }
+  }

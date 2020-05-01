@@ -1,0 +1,16 @@
+{
+    "properties": {
+      "ipSecurityRestrictions": [
+          {
+              "action": "Allow",
+              "ipAddress": "AFD",
+              "priority": 200,
+              "xForwardedHosts":
+              [
+                "madsd.reddoglabs.com",
+                "madsd-webs.azurefd.net"
+              ]
+          }
+      ]
+    }
+  }

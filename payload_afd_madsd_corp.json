@@ -1,0 +1,30 @@
+{
+    "properties": {
+      "ipSecurityRestrictions": [
+          {
+              "action": "Allow",
+              "ipAddress": "AFD",
+              "priority": 200,
+              "xForwardedHosts":
+              [
+                "www.contoso.com",
+                "contoso.azurefd.net"
+              ],
+              "xForwardedFors":
+              [
+                "2001:4898:80e8:0:d5e6:1b27:f7a0:9600/128"
+              ]
+          },
+          {
+            "action": "Allow",
+            "ipAddress": "131.107.0.0/16",
+            "priority": 100
+          },
+          {
+            "action": "Allow",
+            "ipAddress": "167.220.0.0/16",
+            "priority": 100
+          }
+      ]
+    }
+  }
